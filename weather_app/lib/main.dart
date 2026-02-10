@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(const MyApp());
@@ -61,19 +63,48 @@ class _WeatherScreenState extends State<WeatherScreen> {
   }
 
   Future<void> _getWeather() async {
-    final city = _cityController.text;
+    final city = _cityController.text.trim();
+
+    if (city.isEmpty) return;
 
     setState(() {
       _isLoading = true;
       _resultText = null;
     });
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      const apiKey = '15c1ac4120a69a1b53eef3653f534f51';
 
-    setState(() {
-      _isLoading = false;
-      _resultText = 'Погода для города: $city';
-    });
+      final url = Uri.parse(
+        'https://api.openweathermap.org/data/2.5/weather'
+        '?q=$city'
+        '&units=metric'
+        '&appid=$apiKey',
+      );
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint(data.toString());
+
+        setState(() {
+          _resultText = 'Data recieved. Look in console';
+        });
+      } else {
+        setState(() {
+          _resultText = 'Error. city not found';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _resultText = 'Network error';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
