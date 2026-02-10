@@ -17,8 +17,18 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class WeatherScreen extends StatelessWidget {
+class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
+
+  @override
+  State<WeatherScreen> createState() => _WeatherScreenState();
+}
+
+class _WeatherScreenState extends State<WeatherScreen> {
+  final TextEditingController _cityController = TextEditingController();
+
+  bool _isLoading = false;
+  String? _resultText;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +40,7 @@ class WeatherScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
+              controller: _cityController,
               decoration: const InputDecoration(
                 labelText: 'Город',
                 border: OutlineInputBorder(),
@@ -37,14 +48,37 @@ class WeatherScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
-                // logic will be later...
-              },
+              onPressed: _getWeather,
               child: const Text('Получить погоду'),
             ),
+            const SizedBox(height: 24),
+            if (_isLoading) const CircularProgressIndicator(),
+            if (_resultText != null) Text(_resultText!),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _getWeather() async {
+    final city = _cityController.text;
+
+    setState(() {
+      _isLoading = true;
+      _resultText = null;
+    });
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    setState(() {
+      _isLoading = false;
+      _resultText = 'Погода для города: $city';
+    });
+  }
+
+  @override
+  void dispose() {
+    _cityController.dispose();
+    super.dispose();
   }
 }
