@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'models/weather.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,7 +31,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
   final TextEditingController _cityController = TextEditingController();
 
   bool _isLoading = false;
-  String? _resultText;
+  Weather? _weather;
+  String? _error;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +57,17 @@ class _WeatherScreenState extends State<WeatherScreen> {
             ),
             const SizedBox(height: 24),
             if (_isLoading) const CircularProgressIndicator(),
-            if (_resultText != null) Text(_resultText!),
+            if (_weather != null)
+              Column(
+                children: [
+                  Text('City: ${_weather!.cityName}'),
+                  Text('Temperature: ${_weather!.temperature} °C'),
+                  Text('Description: ${_weather!.description}'),
+                  Text('Humidity: ${_weather!.humidity} %'),
+                  Text('Wind speed: ${_weather!.windSpeed} mps'),
+                ],
+              ),
+            if (_error != null) Text(_error!),
           ],
         ),
       ),
@@ -69,7 +81,6 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
     setState(() {
       _isLoading = true;
-      _resultText = null;
     });
 
     try {
@@ -86,19 +97,22 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        debugPrint(data.toString());
+        final weather = Weather.fromJson(data);
 
         setState(() {
-          _resultText = 'Data recieved. Look in console';
+          _weather = weather;
+          _error = null;
         });
       } else {
         setState(() {
-          _resultText = 'Error. city not found';
+          _weather = null;
+          _error = 'Error. city not found';
         });
       }
     } catch (e) {
+      debugPrint('ERROR: $e');
       setState(() {
-        _resultText = 'Network error';
+        _error = 'Network error $e';
       });
     } finally {
       setState(() {
