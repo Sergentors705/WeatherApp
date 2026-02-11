@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'models/weather.dart';
+import 'services/weather_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,6 +30,7 @@ class WeatherScreen extends StatefulWidget {
 
 class _WeatherScreenState extends State<WeatherScreen> {
   final TextEditingController _cityController = TextEditingController();
+  final WeatherService _weatherService = WeatherService();
 
   bool _isLoading = false;
   Weather? _weather;
@@ -81,38 +83,19 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
     setState(() {
       _isLoading = true;
+      _weather = null;
+      _error = null;
     });
 
     try {
-      const apiKey = '15c1ac4120a69a1b53eef3653f534f51';
+      final weather = await _weatherService.fetchWeather(city);
 
-      final url = Uri.parse(
-        'https://api.openweathermap.org/data/2.5/weather'
-        '?q=$city'
-        '&units=metric'
-        '&appid=$apiKey',
-      );
-
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final weather = Weather.fromJson(data);
-
-        setState(() {
-          _weather = weather;
-          _error = null;
-        });
-      } else {
-        setState(() {
-          _weather = null;
-          _error = 'Error. city not found';
-        });
-      }
-    } catch (e) {
-      debugPrint('ERROR: $e');
       setState(() {
-        _error = 'Network error $e';
+        _weather = weather;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
       });
     } finally {
       setState(() {
