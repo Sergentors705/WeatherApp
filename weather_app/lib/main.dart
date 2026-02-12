@@ -54,21 +54,36 @@ class _WeatherScreenState extends State<WeatherScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _getWeather,
+              onPressed: _isLoading ? null : _getWeather,
               child: const Text('Получить погоду'),
             ),
             const SizedBox(height: 24),
             if (_isLoading) const CircularProgressIndicator(),
             if (_weather != null)
-              Column(
-                children: [
-                  Text('City: ${_weather!.cityName}'),
-                  Text('Temperature: ${_weather!.temperature} °C'),
-                  Text('Description: ${_weather!.description}'),
-                  Text('Humidity: ${_weather!.humidity} %'),
-                  Text('Wind speed: ${_weather!.windSpeed} mps'),
-                ],
+              Card(
+                margin: const EdgeInsets.only(top: 24),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text(
+                        _weather!.cityName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text('Temperature: ${_weather!.temperature} °C'),
+                      Text('Humidity: ${_weather!.humidity} %'),
+                      Text('Wind speed: ${_weather!.windSpeed} mps'),
+                      const SizedBox(height: 8),
+                      Text('Description: ${_weather!.description}'),
+                    ],
+                  ),
+                ),
               ),
+
             if (_error != null) Text(_error!),
           ],
         ),
@@ -79,7 +94,12 @@ class _WeatherScreenState extends State<WeatherScreen> {
   Future<void> _getWeather() async {
     final city = _cityController.text.trim();
 
-    if (city.isEmpty) return;
+    if (city.isEmpty) {
+      setState(() {
+        _error = 'Enter city name';
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
