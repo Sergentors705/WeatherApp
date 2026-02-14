@@ -21,6 +21,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+enum WeatherState { initial, loading, loaded, error }
+
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
 
@@ -32,9 +34,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
   final TextEditingController _cityController = TextEditingController();
   final WeatherService _weatherService = WeatherService();
 
-  bool _isLoading = false;
+  WeatherState _state = WeatherState.initial;
   Weather? _weather;
-  String? _error;
+  String? _errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -54,12 +56,14 @@ class _WeatherScreenState extends State<WeatherScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _isLoading ? null : _getWeather,
+              onPressed: _state == WeatherState.loading ? null : _getWeather,
               child: const Text('Получить погоду'),
             ),
             const SizedBox(height: 24),
-            if (_isLoading) const CircularProgressIndicator(),
-            if (_weather != null)
+            if (_state == WeatherState.loading)
+              const CircularProgressIndicator(),
+            if (_state == WeatherState.error) Text(_errorMessage ?? ''),
+            if (_state == WeatherState.loaded && _weather != null)
               Card(
                 margin: const EdgeInsets.only(top: 24),
                 child: Padding(
@@ -83,8 +87,6 @@ class _WeatherScreenState extends State<WeatherScreen> {
                   ),
                 ),
               ),
-
-            if (_error != null) Text(_error!),
           ],
         ),
       ),
@@ -96,15 +98,14 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
     if (city.isEmpty) {
       setState(() {
-        _error = 'Enter city name';
+        _state = WeatherState.error;
+        _errorMessage = 'Enter city name';
       });
       return;
     }
 
     setState(() {
-      _isLoading = true;
-      _weather = null;
-      _error = null;
+      _state = WeatherState.loading;
     });
 
     try {
@@ -112,14 +113,12 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
       setState(() {
         _weather = weather;
+        _state = WeatherState.loaded;
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
+        _errorMessage = 'Loading error';
+        _state = WeatherState.error;
       });
     }
   }
