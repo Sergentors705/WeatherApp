@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'models/weather.dart';
 import 'services/weather_service.dart';
+import 'widgets/weather_card.dart';
 
 void main() {
   runApp(const MyApp());
@@ -64,29 +65,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
               const CircularProgressIndicator(),
             if (_state == WeatherState.error) Text(_errorMessage ?? ''),
             if (_state == WeatherState.loaded && _weather != null)
-              Card(
-                margin: const EdgeInsets.only(top: 24),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Text(
-                        _weather!.cityName,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text('Temperature: ${_weather!.temperature} °C'),
-                      Text('Humidity: ${_weather!.humidity} %'),
-                      Text('Wind speed: ${_weather!.windSpeed} mps'),
-                      const SizedBox(height: 8),
-                      Text('Description: ${_weather!.description}'),
-                    ],
-                  ),
-                ),
-              ),
+              WeatherCard(weather: _weather!),
           ],
         ),
       ),
