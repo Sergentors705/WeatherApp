@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'models/weather.dart';
 import 'services/weather_service.dart';
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-enum WeatherState { initial, loading, loaded, error }
+enum WeatherState { initial, loading, loaded, error, lastCity }
 
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
@@ -38,6 +39,21 @@ class _WeatherScreenState extends State<WeatherScreen> {
   WeatherState _state = WeatherState.initial;
   Weather? _weather;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    final savedCity = await _loadLastCity();
+
+    if (savedCity != null && savedCity.isNotEmpty) {
+      _cityController.text = savedCity;
+      await _getWeather();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +88,18 @@ class _WeatherScreenState extends State<WeatherScreen> {
     );
   }
 
+  Future<void> _saveLastCity(String city) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_city', city);
+    debugPrint('SAVED CITY: $city');
+  }
+
+  Future<String?> _loadLastCity() async {
+    final prefs = await SharedPreferences.getInstance();
+    debugPrint('Loaded city: ${prefs.getString('last_city')}');
+    return prefs.getString('last_city');
+  }
+
   Future<void> _getWeather() async {
     final city = _cityController.text.trim();
 
@@ -82,13 +110,13 @@ class _WeatherScreenState extends State<WeatherScreen> {
       });
       return;
     }
-
     setState(() {
       _state = WeatherState.loading;
     });
 
     try {
       final weather = await _weatherService.fetchWeather(city);
+      await _saveLastCity(city);
 
       setState(() {
         _weather = weather;
