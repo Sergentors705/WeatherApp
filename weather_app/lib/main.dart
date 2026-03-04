@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-enum WeatherState { initial, loading, loaded, error, lastCity }
+enum WeatherState { initial, loading, loaded, error }
 
 class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
@@ -47,11 +47,15 @@ class _WeatherScreenState extends State<WeatherScreen> {
   }
 
   Future<void> _initialize() async {
-    final savedCity = await _loadLastCity();
+    final cachedWeather = await _loadLastWeather();
 
-    if (savedCity != null && savedCity.isNotEmpty) {
-      _cityController.text = savedCity;
-      await _getWeather();
+    if (cachedWeather != null) {
+      _cityController.text = cachedWeather.cityName;
+
+      setState(() {
+        _weather = cachedWeather;
+        _state = WeatherState.loaded;
+      });
     }
   }
 
@@ -88,16 +92,24 @@ class _WeatherScreenState extends State<WeatherScreen> {
     );
   }
 
-  Future<void> _saveLastCity(String city) async {
+  Future<void> _saveLastWeather(Weather weather) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('last_city', city);
-    debugPrint('SAVED CITY: $city');
+    final jsonMap = weather.toJson();
+    final jsonString = jsonEncode(jsonMap);
+
+    await prefs.setString('last_weather', jsonString);
   }
 
-  Future<String?> _loadLastCity() async {
+  Future<Weather?> _loadLastWeather() async {
     final prefs = await SharedPreferences.getInstance();
-    debugPrint('Loaded city: ${prefs.getString('last_city')}');
-    return prefs.getString('last_city');
+    final jsonString = prefs.getString('last_weather');
+
+    if (jsonString == null) return null;
+
+    final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+    final weather = Weather.fromJson(jsonMap);
+
+    return weather;
   }
 
   Future<void> _getWeather() async {
@@ -116,7 +128,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
     try {
       final weather = await _weatherService.fetchWeather(city);
-      await _saveLastCity(city);
+      await _saveLastWeather(weather);
 
       setState(() {
         _weather = weather;

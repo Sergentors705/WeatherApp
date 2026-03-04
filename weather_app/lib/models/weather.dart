@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Weather {
   final String cityName;
   final double temperature;
@@ -12,6 +14,15 @@ class Weather {
     required this.humidity,
     required this.windSpeed,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': cityName,
+      'main': {'temp': temperature, 'humidity': humidity},
+      'wind': {'speed': windSpeed},
+      'weather': {'description': description},
+    };
+  }
 
   factory Weather.fromJson(Map<String, dynamic> json) {
     final main = json['main'] as Map<String, dynamic>?;
