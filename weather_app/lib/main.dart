@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:weather_app/controllers/weather_controller.dart';
+import 'package:weather_app/services/local_storage_service.dart';
 import 'dart:convert';
 import 'models/weather.dart';
 import 'services/weather_service.dart';
@@ -35,28 +37,14 @@ class WeatherScreen extends StatefulWidget {
 class _WeatherScreenState extends State<WeatherScreen> {
   final TextEditingController _cityController = TextEditingController();
   final WeatherService _weatherService = WeatherService();
+  final LocalStorageService _localStorageService = LocalStorageService();
 
-  WeatherState _state = WeatherState.initial;
-  Weather? _weather;
-  String? _errorMessage;
+  late final WeatherController controller;
 
   @override
   void initState() {
     super.initState();
-    _initialize();
-  }
-
-  Future<void> _initialize() async {
-    final cachedWeather = await _loadLastWeather();
-
-    if (cachedWeather != null) {
-      _cityController.text = cachedWeather.cityName;
-
-      setState(() {
-        _weather = cachedWeather;
-        _state = WeatherState.loaded;
-      });
-    }
+    controller = WeatherController(WeatherService(), LocalStorageService());
   }
 
   @override
@@ -77,69 +65,32 @@ class _WeatherScreenState extends State<WeatherScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _state == WeatherState.loading ? null : _getWeather,
+              onPressed: () => controller.getWeather(_cityController.text),
               child: const Text('Получить погоду'),
             ),
             const SizedBox(height: 24),
-            if (_state == WeatherState.loading)
-              const CircularProgressIndicator(),
-            if (_state == WeatherState.error) Text(_errorMessage ?? ''),
-            if (_state == WeatherState.loaded && _weather != null)
-              WeatherCard(weather: _weather!),
+            ListenableBuilder(
+              listenable: controller,
+              builder: (context, child) {
+                if (controller.state == WeatherState.loading) {
+                  return const CircularProgressIndicator();
+                }
+
+                if (controller.state == WeatherState.error) {
+                  return Text(controller.errorMessage ?? '');
+                }
+
+                if (controller.state == WeatherState.loaded &&
+                    controller.weather != null) {
+                  return WeatherCard(weather: controller.weather!);
+                }
+                return const SizedBox();
+              },
+            ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _saveLastWeather(Weather weather) async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonMap = weather.toJson();
-    final jsonString = jsonEncode(jsonMap);
-
-    await prefs.setString('last_weather', jsonString);
-  }
-
-  Future<Weather?> _loadLastWeather() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getString('last_weather');
-
-    if (jsonString == null) return null;
-
-    final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
-    final weather = Weather.fromJson(jsonMap);
-
-    return weather;
-  }
-
-  Future<void> _getWeather() async {
-    final city = _cityController.text.trim();
-
-    if (city.isEmpty) {
-      setState(() {
-        _state = WeatherState.error;
-        _errorMessage = 'Enter city name';
-      });
-      return;
-    }
-    setState(() {
-      _state = WeatherState.loading;
-    });
-
-    try {
-      final weather = await _weatherService.fetchWeather(city);
-      await _saveLastWeather(weather);
-
-      setState(() {
-        _weather = weather;
-        _state = WeatherState.loaded;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Loading error';
-        _state = WeatherState.error;
-      });
-    }
   }
 
   @override
