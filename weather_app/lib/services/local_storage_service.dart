@@ -24,3 +24,13 @@ class LocalStorageService {
     return weather;
   }
 }
+
+class FakeStorageService implements LocalStorageService {
+  @override
+  Future<void> saveWeather(Weather weather) async {}
+
+  @override
+  Future<Weather?> loadWeather() async {
+    return null;
+  }
+}

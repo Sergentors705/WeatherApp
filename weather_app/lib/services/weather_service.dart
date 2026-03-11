@@ -25,3 +25,23 @@ class WeatherService {
     return Weather.fromJson(data);
   }
 }
+
+class FakeWeatherService implements WeatherService {
+  @override
+  Future<Weather> fetchWeather(String city) async {
+    return Weather(
+      cityName: city,
+      temperature: 20,
+      description: 'clear sky',
+      humidity: 50,
+      windSpeed: 3,
+    );
+  }
+}
+
+class ErrorFakeWeatherService implements WeatherService {
+  @override
+  Future<Weather> fetchWeather(String city) async {
+    throw Exception('API error');
+  }
+}
