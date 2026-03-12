@@ -1,17 +1,12 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:weather_app/main.dart';
 import 'package:weather_app/models/weather.dart';
-import 'package:weather_app/services/local_storage_service.dart';
-import 'package:weather_app/services/weather_service.dart';
+import 'package:weather_app/repositories/weather_repository.dart';
 
 class WeatherController extends ChangeNotifier {
-  final WeatherService service;
-  final LocalStorageService storage;
+  final WeatherRepository repository;
 
-  WeatherController(this.service, this.storage);
+  WeatherController(this.repository);
 
   Weather? weather;
   WeatherState state = WeatherState.initial;
@@ -26,13 +21,11 @@ class WeatherController extends ChangeNotifier {
     }
 
     state = WeatherState.loading;
-    final cachedWeather = await storage.loadWeather();
+    final cachedWeather = await repository.getCachedWeather();
     notifyListeners();
 
     try {
-      final newWeather = await service.fetchWeather(city);
-
-      await storage.saveWeather(newWeather);
+      final newWeather = await repository.getWeather(city);
 
       weather = newWeather;
       state = WeatherState.loaded;

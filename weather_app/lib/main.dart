@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:weather_app/controllers/weather_controller.dart';
+import 'package:weather_app/repositories/weather_repository.dart';
 import 'package:weather_app/services/local_storage_service.dart';
 import 'dart:convert';
 import 'models/weather.dart';
@@ -44,7 +45,9 @@ class _WeatherScreenState extends State<WeatherScreen> {
   @override
   void initState() {
     super.initState();
-    controller = WeatherController(WeatherService(), LocalStorageService());
+    controller = WeatherController(
+      WeatherRepository(WeatherService(), LocalStorageService()),
+    );
   }
 
   @override

@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:weather_app/controllers/weather_controller.dart';
 import 'package:weather_app/main.dart';
+import 'package:weather_app/repositories/weather_repository.dart';
 import 'package:weather_app/services/local_storage_service.dart';
 import 'package:weather_app/services/weather_service.dart';
 
 void main() {
   test("empty city should set error state", () async {
     final controller = WeatherController(
-      FakeWeatherService(),
-      FakeStorageService(),
+      WeatherRepository(FakeWeatherService(), FakeStorageService()),
     );
 
     await controller.getWeather("");
@@ -17,8 +17,7 @@ void main() {
   });
   test("successful weather load", () async {
     final controller = WeatherController(
-      FakeWeatherService(),
-      FakeStorageService(),
+      WeatherRepository(FakeWeatherService(), FakeStorageService()),
     );
     await controller.getWeather("London");
 
@@ -30,8 +29,7 @@ void main() {
 
   test("should set error state when service throws exception", () async {
     final controller = WeatherController(
-      ErrorFakeWeatherService(),
-      FakeStorageService(),
+      WeatherRepository(ErrorFakeWeatherService(), FakeStorageService()),
     );
     await controller.getWeather("London");
 
