@@ -47,35 +47,48 @@ class _WeatherScreenState extends State<WeatherScreen> {
     final controller = context.watch<WeatherController>();
     return Scaffold(
       appBar: AppBar(title: const Text('Weather App'), centerTitle: true),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _cityController,
-              decoration: const InputDecoration(
-                labelText: 'Город',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                context.read<WeatherController>().getWeather(
-                  _cityController.text,
-                );
-              },
-              child: const Text('Получить погоду'),
-            ),
-            const SizedBox(height: 24),
-            const Spacer(),
-            if (controller.isLoading) const CircularProgressIndicator(),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final controller = context.read<WeatherController>();
 
-            if (controller.hasError) Text(controller.errorMessage ?? ''),
+          if (controller.hasWeather) {
+            await controller.getWeather(controller.weather.cityName);
+          }
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _cityController,
+                  decoration: const InputDecoration(
+                    labelText: 'Город',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<WeatherController>().getWeather(
+                      _cityController.text,
+                    );
+                  },
+                  child: const Text('Получить погоду'),
+                ),
+                const SizedBox(height: 24),
 
-            if (controller.hasWeather) WeatherCard(weather: controller.weather),
-          ],
+                if (controller.isLoading) const CircularProgressIndicator(),
+
+                if (controller.hasError) Text(controller.errorMessage ?? ''),
+
+                if (controller.hasWeather)
+                  WeatherCard(weather: controller.weather),
+              ],
+            ),
+          ),
         ),
       ),
     );
