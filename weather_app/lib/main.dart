@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'package:weather_app/controllers/weather_controller.dart';
 import 'package:weather_app/repositories/weather_repository.dart';
 import 'package:weather_app/services/local_storage_service.dart';
-import 'dart:convert';
-import 'models/weather.dart';
 import 'services/weather_service.dart';
 import 'widgets/weather_card.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => WeatherController(
+        WeatherRepository(WeatherService(), LocalStorageService()),
+      ),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -37,27 +41,16 @@ class WeatherScreen extends StatefulWidget {
 
 class _WeatherScreenState extends State<WeatherScreen> {
   final TextEditingController _cityController = TextEditingController();
-  final WeatherService _weatherService = WeatherService();
-  final LocalStorageService _localStorageService = LocalStorageService();
-
-  late final WeatherController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = WeatherController(
-      WeatherRepository(WeatherService(), LocalStorageService()),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<WeatherController>();
     return Scaffold(
       appBar: AppBar(title: const Text('Weather App'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             TextField(
               controller: _cityController,
@@ -68,28 +61,20 @@ class _WeatherScreenState extends State<WeatherScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => controller.getWeather(_cityController.text),
+              onPressed: () {
+                context.read<WeatherController>().getWeather(
+                  _cityController.text,
+                );
+              },
               child: const Text('Получить погоду'),
             ),
             const SizedBox(height: 24),
-            ListenableBuilder(
-              listenable: controller,
-              builder: (context, child) {
-                if (controller.state == WeatherState.loading) {
-                  return const CircularProgressIndicator();
-                }
+            const Spacer(),
+            if (controller.isLoading) const CircularProgressIndicator(),
 
-                if (controller.state == WeatherState.error) {
-                  return Text(controller.errorMessage ?? '');
-                }
+            if (controller.hasError) Text(controller.errorMessage ?? ''),
 
-                if (controller.state == WeatherState.loaded &&
-                    controller.weather != null) {
-                  return WeatherCard(weather: controller.weather!);
-                }
-                return const SizedBox();
-              },
-            ),
+            if (controller.hasWeather) WeatherCard(weather: controller.weather),
           ],
         ),
       ),
